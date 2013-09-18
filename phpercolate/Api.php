@@ -104,7 +104,8 @@ class PercolateApi {
     $users = $this->executeMethod('groups/' . $group_id . '/users', $options);
     return $users['data'];
   }
-  
+
+
   /**
    * Gets a list of posts made by users in a group.
    *
@@ -117,6 +118,15 @@ class PercolateApi {
    */
   public function getGroupPosts($group_id, $options = array()) {
     return $this->executeMethod('groups/' . $group_id . '/posts', $options);
+  }
+
+
+  /************/
+  /* Licenses */
+  /************/
+
+  public function getLicensePosts($license_id, $options = array()) {
+    return $this->executeMethod('licenses/' . $license_id . '/posts', $options);
   }
   
   

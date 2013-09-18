@@ -24,8 +24,8 @@ function pi_import_form($form, &$form_state) {
     '#type' => 'select',
     '#title' => t('Import type'),
     '#options' => array(
+      PI_IMPORT_TYPE_LICENSE => t('License'),
       PI_IMPORT_TYPE_USER => t('User'),
-      PI_IMPORT_TYPE_GROUP => t('Group'),
     ),
     '#default_value' => $default['import_type'],
   );
@@ -42,7 +42,7 @@ function pi_import_form($form, &$form_state) {
   $form['import_settings']['import_count'] = array(
     '#type' => 'textfield',
     '#title' => t('Number of articles to import'),
-    '#description' => t('Choose how many of the latest posts to import. Duplicates will not be imported. Reducing this number reduces import time, but may cause you to miss posts since the last import. For groups, this number of articles will be imported per user.'),
+    '#description' => t('Choose how many of the latest posts to import. Duplicates will not be imported. Reducing this number reduces import time, but may cause you to miss posts since the last import.'),
     '#default_value' => $default['import_count'],
     '#size' => 3,
   );
@@ -87,6 +87,19 @@ function pi_import_form($form, &$form_state) {
     '#default_value' => $user ? $user->name : '',
     '#size' => 24,
     '#autocomplete_path' => 'user/autocomplete',
+  );
+
+  $formats = filter_formats();
+  $format_options = array();
+  foreach ($formats as $format) {
+    $format_options[$format->format] = $format->name;
+  }
+  $form['node_settings']['text_format'] = array(
+    '#type' => 'select',
+    '#title' => t('Body text format'),
+    '#description' => t('Text format the body should be rendered with. Keep in mind that Percolate content may include HTML markup.'),
+    '#options' => $format_options,
+    '#default_value' => $default['text_format']
   );
   
   $form['node_settings']['match_publish_date'] = array(
@@ -168,7 +181,7 @@ function pi_import_form_save_settings($form, &$form_state) {
  */
 function pi_import_settings() {
   return array_merge(array(
-    'import_type' => PI_IMPORT_TYPE_USER,
+    'import_type' => PI_IMPORT_TYPE_LICENSE,
     'import_id' => '',
     'import_count' => 20,
     'content_type' => '',
@@ -177,6 +190,7 @@ function pi_import_settings() {
     'match_publish_date' => TRUE,
     'reimport_deleted' => TRUE,
     'publish' => FALSE,
+    'text_format' => 'filtered_html',
   ), variable_get(PI_IMPORT_SETTINGS, array()));
 }
 

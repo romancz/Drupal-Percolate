@@ -2,7 +2,7 @@ Percolate Integration
 =====================
 
 A module that provides integration between the Percolate API and Drupal.
-https://github.com/wbobeirne/pi
+https://github.com/percolate/Drupal-Percolate
 
 
 Features
