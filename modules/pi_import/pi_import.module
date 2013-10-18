@@ -211,36 +211,42 @@ function pi_import_import_post($post, $settings, &$context = array()) {
   
   foreach ($mappings as $node_field => $post_field) {
     if ($post_field) {
-      $field_info = field_info_field($node_fields[$node_field]['field_name']);
-      // Link fields are split out.
-      if ($field_info['type'] == 'link_field') {
-        $type = strstr($node_field, ':url') ? 'url' : 'title';
-        $node->{$field_info['field_name']}[LANGUAGE_NONE][0][$type] = $post[$post_field];
+      if ($node_field == 'pi_import_term') {
+          $term_import_field = pi_map_term_to_field($post_field, $node->type);
+          $node->{$term_import_field}[LANGUAGE_NONE][0]['tid'] = $post_field;
       }
       else {
-        switch ($post_field) {
-          case 'tags':
-            $tags = pi_import_tags($post, $field_info['settings']['allowed_values'][0]['vocabulary']);
-            if ($tags) {
-              $node->{$field_info['field_name']}[LANGUAGE_NONE] = $tags;
-            }
-            break;
-            
-          case 'media':
-            $media = pi_import_media($post);
-            if ($media) {
-              $node->{$field_info['field_name']}[LANGUAGE_NONE][0] = get_object_vars($media);
-            }
-            break;
+          $field_info = field_info_field($node_fields[$node_field]['field_name']);
+          // Link fields are split out.
+          if ($field_info['type'] == 'link_field') {
+            $type = strstr($node_field, ':url') ? 'url' : 'title';
+            $node->{$field_info['field_name']}[LANGUAGE_NONE][0][$type] = $post[$post_field];
+          }
+          else {
+            switch ($post_field) {
+              case 'tags':
+                $tags = pi_import_tags($post, $field_info['settings']['allowed_values'][0]['vocabulary']);
+                if ($tags) {
+                  $node->{$field_info['field_name']}[LANGUAGE_NONE] = $tags;
+                }
+                break;
 
-          case 'body':
-            $node->{$field_info['field_name']}[LANGUAGE_NONE][0]['format'] = $settings['text_format'];
-            $node->{$field_info['field_name']}[LANGUAGE_NONE][0]['value'] = $post[$post_field];
+              case 'media':
+                $media = pi_import_media($post);
+                if ($media) {
+                  $node->{$field_info['field_name']}[LANGUAGE_NONE][0] = get_object_vars($media);
+                }
+                break;
 
-          default:
-            $node->{$field_info['field_name']}[LANGUAGE_NONE][0]['value'] = $post[$post_field];
-            break;
-        }
+              case 'body':
+                $node->{$field_info['field_name']}[LANGUAGE_NONE][0]['format'] = $settings['text_format'];
+                $node->{$field_info['field_name']}[LANGUAGE_NONE][0]['value'] = $post[$post_field];
+
+              default:
+                $node->{$field_info['field_name']}[LANGUAGE_NONE][0]['value'] = $post[$post_field];
+                break;
+            }
+          }
       }
     }
   }

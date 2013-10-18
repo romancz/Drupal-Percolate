@@ -13,7 +13,7 @@
 function pi_import_form($form, &$form_state) {
   $form = array();
   $default = pi_import_settings();
-  
+
   // Import settings
   $form['import_settings'] = array(
     '#type' => 'fieldset',
@@ -46,7 +46,6 @@ function pi_import_form($form, &$form_state) {
     '#default_value' => $default['import_count'],
     '#size' => 3,
   );
-  
   
   // Field mappings
   $types = node_type_get_types();
@@ -216,8 +215,13 @@ function pi_import_build_field_mappings_table($content_type, $default) {
   if ($content_type) {
     $post_fields = pi_get_post_fields();
     $node_fields = pi_get_content_type_fields($content_type);
-    
+    $terms = array();
+
     foreach ($node_fields as $name => $field) {
+      if ($field['type'] == 'taxonomy_term_reference') {
+          $terms[$field['field_name']] = $field['label'];
+      }
+
       $value = isset($default['field_mappings'][$content_type][$name]) ? $default['field_mappings'][$content_type][$name] : 0;
       $form[$content_type][$name] = array(
         '#type' => 'select',
@@ -226,6 +230,45 @@ function pi_import_build_field_mappings_table($content_type, $default) {
         '#required' => empty($field['required']) ? FALSE : TRUE,
         '#default_value' => $value,
       );
+    }
+    $term_options = array(0 => t('-- select --'));
+
+    if (isset($default['field_mappings'][$content_type]['pi_import_term'])) {
+        $taxonomy_term = taxonomy_term_load($default['field_mappings'][$content_type]['pi_import_term']);
+        $vid = $taxonomy_term;
+        $vocabulary = taxonomy_vocabulary_load($vid->vid);
+        $vocabulary_name = $vocabulary->name;
+        //$form[$content_type]['pi_import_item']['#default'] = $default['field_mappings'][$content_type][$vocabulary_name]['pi_import_term'];
+    }
+
+    if (count($terms)) {
+
+        $selected = isset($default['field_mappings'][$content_type]['pi_import_term']) ? $default['field_mappings'][$content_type]['pi_import_term'] : NULL;
+
+        foreach ($terms as $field_name => $label) {
+            if ($field_name) {
+                $info = field_info_field($field_name);
+
+                // The link to the vocab is stored as it's machine name
+                $vocab_machine_name = $info['settings']['allowed_values'][0]['vocabulary'];
+
+                // Load the vocab by machine name
+                $vocab = taxonomy_vocabulary_machine_name_load($vocab_machine_name);
+
+                // Finally, get the vid
+                $vid = $vocab->vid;
+                $terms_for_voc = pi_get_taxonomies_for_vocabulary($vid);
+                $term_options[$label] = $terms_for_voc;
+            }
+        }
+        //print_r($term_options);print_r($default);die();
+        $form[$content_type]['pi_import_term'] = array(
+            '#type' => 'select',
+            '#title' => t('Term to import the nodes into.'),
+            '#options' => $term_options,
+            '#default_value' => $selected,
+            '#required' => FALSE,
+        );
     }
   }
   else {
@@ -323,6 +366,7 @@ function pi_get_field_post_field_options($node_field, $post_fields) {
 function pi_get_content_type_fields($content_type) {
   $field_info = field_info_fields();
   $node_fields = field_info_instances('node', $content_type);
+
   $allowed_field_types = array(
     'text',
     'text_long',
@@ -406,12 +450,101 @@ function pi_import_settings_form($form, &$form_state) {
     '#default_value' => variable_get('pi_import_threshold', PI_IMPORT_DEFAULT_FREQUENCY) / 60,
     '#field_suffix' => 'minutes',
   );
-  
+
+  // Select lists to choose term to import articles in
+
+  $vocabularies = taxonomy_get_vocabularies();
+  $options = array();
+  foreach ($vocabularies as $voc) {
+    $options[$voc->vid] = $voc->name;
+  }
+  $option_first = array_shift(array_keys($options));
+
+  $selected = isset($form_state['values']['pi_import_vocabulary']) ? $form_state['values']['pi_import_vocabulary'] : $option_first;
+
+  $form['pi_import_vocabulary'] = array(
+      '#type' => 'select',
+      '#title' => t('Import vocabulary'),
+      '#description' => t('Select the vocabulary of the term you want to import the content in.'),
+      '#default_value' => NULL,
+      '#options' => $options,
+      '#ajax' => array(
+          'event' => 'change',
+          'callback' => 'pi_get_taxonomy_dropdown_for_ajax',
+          'wrapper' => 'taxonomy_terms_dropdown',
+      ),
+  );
+
+  $form['pi_import_term'] = array(
+      '#type' => 'select',
+      '#title' => t('Import term'),
+      '#description' => t('Select a term to import the content into.'),
+      '#prefix' => '<div id="taxonomy_terms_dropdown">',
+      '#suffix' => '</div>',
+      '#options' => pi_get_taxonomies_for_vocabulary($selected),
+      '#default_value' => isset($form_state['values']['pi_import_term']) ? $form_state['values']['pi_import_term'] : variable_get('pi_import_term', NULL),
+  );
+
   $form['#validate'][] = 'pi_import_settings_form_validate';
   
   return system_settings_form($form);
 }
 
+function pi_get_taxonomies_for_vocabulary($vid) {
+    $taxonomies = taxonomy_get_tree($vid);
+    $terms = array();
+    foreach ($taxonomies as $taxonomy) {
+        $terms[$taxonomy->tid] = $taxonomy->name;
+    }
+    return $terms;
+}
+
+function pi_map_term_to_field($tid, $content_type) {
+    $output_field = NULL;
+    $node_fields = pi_get_content_type_fields($content_type);
+    foreach ($node_fields as $name => $field) {
+         if ($field['type'] == 'taxonomy_term_reference') {
+             $terms[$field['field_name']] = $field['label'];
+             $info = field_info_field($field['field_name']);
+             $vocab_machine_name = $info['settings']['allowed_values'][0]['vocabulary'];
+             // Load the vocab by machine name
+             $vocab = taxonomy_vocabulary_machine_name_load($vocab_machine_name);
+             // Finally, get the vid
+             $vid = $vocab->vid;
+             $vid_terms = taxonomy_get_tree($vid);
+             foreach ($vid_terms as $vid_term) {
+                 if ($tid == $vid_term->tid) {
+                     $output_field = $field['field_name'];
+                 }
+             }
+         }
+    }
+    return $output_field;
+}
+
+function pi_get_taxonomies_for_vocabulary_field($field_name) {
+    $info = field_info_field($field_name);
+
+    // The link to the vocab is stored as it's machine name
+    $vocab_machine_name = $info['settings']['allowed_values'][0]['vocabulary'];
+
+    // Load the vocab by machine name
+    $vocab = taxonomy_vocabulary_machine_name_load($vocab_machine_name);
+
+    // Finally, get the vid
+    $vid = $vocab->vid;
+
+    $taxonomies = taxonomy_get_tree($vid);
+    $terms = array();
+    foreach ($taxonomies as $taxonomy) {
+        $terms[$taxonomy->tid] = $taxonomy->name;
+    }
+    return $terms;
+}
+
+function pi_get_taxonomy_dropdown_for_ajax($form, $form_state) {
+    return $form['field_mappings'][$form_state['values']['content_type']]['pi_import_term'];
+}
 
 /**
  * Validate callback for pi_import_settings_form.
