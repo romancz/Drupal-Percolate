@@ -458,6 +458,7 @@ function pi_import_settings_form($form, &$form_state) {
   foreach ($vocabularies as $voc) {
     $options[$voc->vid] = $voc->name;
   }
+  /*
   $option_first = array_shift(array_keys($options));
 
   $selected = isset($form_state['values']['pi_import_vocabulary']) ? $form_state['values']['pi_import_vocabulary'] : $option_first;
@@ -484,7 +485,7 @@ function pi_import_settings_form($form, &$form_state) {
       '#options' => pi_get_taxonomies_for_vocabulary($selected),
       '#default_value' => isset($form_state['values']['pi_import_term']) ? $form_state['values']['pi_import_term'] : variable_get('pi_import_term', NULL),
   );
-
+  */
   $form['#validate'][] = 'pi_import_settings_form_validate';
   
   return system_settings_form($form);
