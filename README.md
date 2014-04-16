@@ -29,3 +29,10 @@ set the form to auto-import at admin/config/content/percolate/import.
 As a developer, you'll only need the pi module, pi_import is optional. This'll
 give you access to the Percolate API by calling the pi_build_api function. You
 can see what's available in phpercolate/Api.php.
+
+Changelog
+=========
+
+### 1.1
+
+* updated API calls to use https
