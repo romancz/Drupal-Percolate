@@ -11,22 +11,22 @@ class PercolateApi {
    *
    * @var string
    */
-  const API_URL = 'http://percolate.com/api/v3/';
+  const API_URL = 'https://percolate.com/api/v3/';
   /**
    * Number of seconds to wait until timeout.
    *
    * @var integer
    */
   const TIMEOUT = 10;
-  
-  
+
+
   /**
    * Percolate API key.
    *
    * @var string
    */
   private $key = '';
-  
+
   /**
    * Constructor.
    *
@@ -35,13 +35,13 @@ class PercolateApi {
   public function __construct($key) {
     $this->key = $key;
   }
-  
-  
-  
+
+
+
   /*********/
   /* Users */
   /*********/
-  
+
   /**
    * Gets a user by their Percolate user ID.
    *
@@ -52,12 +52,12 @@ class PercolateApi {
   public function getUser($user_id) {
     return $this->executeMethod('users/' . $user_id);
   }
-  
-  
+
+
   /*********/
   /* Posts */
   /*********/
-  
+
   /**
    * Gets a single post by post id.
    *
@@ -68,7 +68,7 @@ class PercolateApi {
   public function getPost($post_id) {
     $results = $this->executeMethod('posts/' . $post_id);
   }
-  
+
   /**
    * Gets a list of a user's posts.
    *
@@ -82,12 +82,12 @@ class PercolateApi {
   public function getUserPosts($user_id, $options = array()) {
     return $this->executeMethod('users/' . $user_id . '/posts', $options);
   }
-  
-  
+
+
   /**********/
   /* Groups */
   /**********/
-  
+
   /**
    * Gets a list of users in a group.
    *
@@ -128,13 +128,13 @@ class PercolateApi {
   public function getLicensePosts($license_id, $options = array()) {
     return $this->executeMethod('licenses/' . $license_id . '/posts', $options);
   }
-  
-  
+
+
   /***********/
   /* Utility */
   /***********/
-  
-  
+
+
   /**
    * Execute an API method.
    *
@@ -178,7 +178,7 @@ class PercolateApi {
       );
     }
   }
-  
+
   /**
    * Converts a keyed array of parameters in to a URL friendly list of params.
    *
@@ -189,7 +189,7 @@ class PercolateApi {
   private function arrayToParams($params) {
     $param_str = '';
     foreach ($params as $key => $value) {
-      $param_str .= $key . '=' . urlencode($value) . '&'; 
+      $param_str .= $key . '=' . urlencode($value) . '&';
     }
     return $param_str;
   }
