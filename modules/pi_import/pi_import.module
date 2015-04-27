@@ -274,10 +274,13 @@ function pi_import_media($post) {
   }
   
   // $post['media']['format'] is not reliable, get it straight from the url.
-  $format = array_pop(explode('.', $post['media']['src']));
+  //Commenting out the format, as this is an improper assumption about filename syntax
+  //$format = array_pop(explode('.', $post['media']['src'])); 
   $dir = 'public://percolate_import';
   file_prepare_directory($dir, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
-  $file = file_save_data($media_data->data, $dir . '/' . $id . '.' . $format, FILE_EXISTS_REPLACE);
+  //Removing reference to format, as this variable was not set correctly.
+  //$file = file_save_data($media_data->data, $dir . '/' . $id . '.' . $format, FILE_EXISTS_REPLACE);
+  $file = file_save_data($media_data->data, $dir . '/' . $id, FILE_EXISTS_REPLACE);
   return $file;
 }
 
